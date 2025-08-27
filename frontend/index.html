@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PokéDex - Gotta Catch 'Em All!</title>
+    <link rel="icon" type="image/png" href="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/25.png">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <script src="config.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'pokemon-blue': '#3B82F6',
+                        'pokemon-red': '#EF4444',
+                        'pokemon-yellow': '#F59E0B',
+                        'pokemon-green': '#10B981',
+                    },
+                    fontFamily: {
+                        'pokemon': ['Nunito', 'sans-serif'],
+                    },
+                    animation: {
+                        'bounce-slow': 'bounce 2s infinite',
+                        'pulse-slow': 'pulse 3s infinite',
+                        'wiggle': 'wiggle 1s ease-in-out infinite',
+                        'float': 'float 3s ease-in-out infinite',
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-gradient-to-br from-blue-100 via-purple-50 to-pink-100 min-h-screen font-pokemon">
+    <!-- Dynamic Island Navbar (Always Floating) -->
+    <nav id="navbar" class="fixed top-4 left-1/2 transform -translate-x-1/2 z-50">
+        <div id="navbarContent" class="floating-navbar bg-black/75 backdrop-blur-md rounded-3xl px-8 py-3 shadow-2xl border border-white/10">
+            <div class="flex items-center space-x-6">
+                <!-- Logo -->
+                <div class="flex items-center space-x-3">
+                    <img 
+                        src="pokeball.png" 
+                        alt="Pokéball" 
+                        class="w-8 h-8 hover:rotate-12 transition-transform duration-300"
+                        onerror="this.style.display='none'; this.nextElementSibling.style.display='block';"
+                    >
+                    <div class="pokeball-fallback bg-gradient-to-r from-red-500 to-red-600 p-2 rounded-full" style="display: none;">
+                        <i class="fas fa-bolt text-white text-sm"></i>
+                    </div>
+                    <h1 class="text-lg font-bold text-white">PokéDex</h1>
+                </div>
+                
+                <!-- Search Bar -->
+                <div class="relative flex-1 max-w-xs">
+                    <input 
+                        type="text" 
+                        id="searchInput" 
+                        placeholder="Search Pokémon..." 
+                        class="w-full px-4 py-2 pl-10 bg-white/10 border border-white/20 rounded-full text-white placeholder-white/60 text-sm focus:outline-none focus:bg-white/20 focus:border-white/40 transition-all duration-300"
+                    >
+                    <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-white/60 text-sm"></i>
+                    <button 
+                        id="clearSearch" 
+                        class="absolute right-3 top-1/2 transform -translate-y-1/2 text-white/60 hover:text-white transition-colors hidden text-sm"
+                    >
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+
+                <!-- Random Button -->
+                <button 
+                    id="randomBtn" 
+                    class="bg-gradient-to-r from-red-600 to-red-800 hover:from-yellow-500 hover:to-orange-600 text-white px-4 py-2 rounded-full text-sm font-medium hover:shadow-lg transform hover:scale-105 transition-all duration-300 flex items-center whitespace-nowrap"
+                >
+                    <i class="fas fa-dice mr-2"></i>
+                    <span>Surprise Me!</span>
+                </button>
+
+                <!-- Stats -->
+                <div class="flex items-center space-x-4 text-white/80 text-xs">
+                    <div class="flex items-center space-x-1">
+                        <span class="text-blue-300 font-semibold" id="totalPokemon">---</span>
+                        <span>Total</span>
+                    </div>
+                    <div class="text-lg" id="serverStatus">🔍</div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Separate Filter Section -->
+    <div class="container mx-auto px-4 pt-32 pb-6">
+        <div class="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg p-6 mb-6">
+            <!-- Type Filters -->
+            <div class="filter-section mb-4">
+                <h3 class="text-sm font-semibold text-gray-700 mb-3">Filter by Type</h3>
+                <div class="flex flex-wrap gap-2">
+                    <button class="filter-chip bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-2 rounded-full text-xs font-medium transition-all duration-200 border border-gray-200 active" data-type="all" data-filter="type">All</button>
+                    <button class="filter-chip bg-red-100 hover:bg-red-200 text-red-700 px-3 py-2 rounded-full text-xs font-medium transition-all duration-200 border border-red-200" data-type="Fire" data-filter="type">Fire</button>
+                    <button class="filter-chip bg-blue-100 hover:bg-blue-200 text-blue-700 px-3 py-2 rounded-full text-xs font-medium transition-all duration-200 border border-blue-200" data-type="Water" data-filter="type">Water</button>
+                    <button class="filter-chip bg-green-100 hover:bg-green-200 text-green-700 px-3 py-2 rounded-full text-xs font-medium transition-all duration-200 border border-green-200" data-type="Grass" data-filter="type">Grass</button>
+                    <button class="filter-chip bg-yellow-100 hover:bg-yellow-200 text-yellow-700 px-3 py-2 rounded-full text-xs font-medium transition-all duration-200 border border-yellow-200" data-type="Electric" data-filter="type">Electric</button>
+                    <button class="filter-chip bg-purple-100 hover:bg-purple-200 text-purple-700 px-3 py-2 rounded-full text-xs font-medium transition-all duration-200 border border-purple-200" data-type="Psychic" data-filter="type">Psychic</button>
+                    <button class="filter-chip bg-cyan-100 hover:bg-cyan-200 text-cyan-700 px-3 py-2 rounded-full text-xs font-medium transition-all duration-200 border border-cyan-200" data-type="Ice" data-filter="type">Ice</button>
+                    <button class="filter-chip bg-indigo-100 hover:bg-indigo-200 text-indigo-700 px-3 py-2 rounded-full text-xs font-medium transition-all duration-200 border border-indigo-200" data-type="Dragon" data-filter="type">Dragon</button>
+                    <button class="filter-chip bg-gray-700 hover:bg-gray-900 text-white px-3 py-2 rounded-full text-xs font-medium transition-all duration-200 border border-gray-700" data-type="Dark" data-filter="type">Dark</button>
+                    <button class="filter-chip bg-pink-100 hover:bg-pink-200 text-pink-700 px-3 py-2 rounded-full text-xs font-medium transition-all duration-200 border border-pink-200" data-type="Fairy" data-filter="type">Fairy</button>
+                    <button class="filter-chip bg-orange-100 hover:bg-orange-200 text-orange-700 px-3 py-2 rounded-full text-xs font-medium transition-all duration-200 border border-orange-200" data-type="Fighting" data-filter="type">Fight</button>
+                    <button class="filter-chip bg-violet-100 hover:bg-violet-200 text-violet-700 px-3 py-2 rounded-full text-xs font-medium transition-all duration-200 border border-violet-200" data-type="Poison" data-filter="type">Poison</button>
+                    <button class="filter-chip bg-amber-100 hover:bg-amber-200 text-amber-700 px-3 py-2 rounded-full text-xs font-medium transition-all duration-200 border border-amber-200" data-type="Ground" data-filter="type">Ground</button>
+                    <button class="filter-chip bg-sky-100 hover:bg-sky-200 text-sky-700 px-3 py-2 rounded-full text-xs font-medium transition-all duration-200 border border-sky-200" data-type="Flying" data-filter="type">Flying</button>
+                    <button class="filter-chip bg-lime-100 hover:bg-lime-200 text-lime-700 px-3 py-2 rounded-full text-xs font-medium transition-all duration-200 border border-lime-200" data-type="Bug" data-filter="type">Bug</button>
+                    <button class="filter-chip bg-stone-100 hover:bg-stone-200 text-stone-700 px-3 py-2 rounded-full text-xs font-medium transition-all duration-200 border border-stone-200" data-type="Rock" data-filter="type">Rock</button>
+                    <button class="filter-chip bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-2 rounded-full text-xs font-medium transition-all duration-200 border border-slate-200" data-type="Ghost" data-filter="type">Ghost</button>
+                    <button class="filter-chip bg-zinc-100 hover:bg-zinc-200 text-zinc-700 px-3 py-2 rounded-full text-xs font-medium transition-all duration-200 border border-zinc-200" data-type="Steel" data-filter="type">Steel</button>
+                    <button class="filter-chip bg-neutral-100 hover:bg-neutral-200 text-neutral-700 px-3 py-2 rounded-full text-xs font-medium transition-all duration-200 border border-neutral-200" data-type="Normal" data-filter="type">Normal</button>
+                </div>
+            </div>
+            
+            <!-- Generation Filters -->
+            <div class="filter-section">
+                <h3 class="text-sm font-semibold text-gray-700 mb-3">Filter by Generation</h3>
+                <div class="flex flex-wrap gap-2">
+                    <button class="filter-chip bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-2 rounded-full text-xs font-medium transition-all duration-200 border border-gray-200 active" data-gen="all" data-filter="generation">All</button>
+                    <button class="filter-chip bg-red-50 hover:bg-red-100 text-red-700 px-3 py-2 rounded-full text-xs font-medium transition-all duration-200 border border-red-200" data-gen="1" data-filter="generation">Gen I</button>
+                    <button class="filter-chip bg-blue-50 hover:bg-blue-100 text-blue-700 px-3 py-2 rounded-full text-xs font-medium transition-all duration-200 border border-blue-200" data-gen="2" data-filter="generation">Gen II</button>
+                    <button class="filter-chip bg-green-50 hover:bg-green-100 text-green-700 px-3 py-2 rounded-full text-xs font-medium transition-all duration-200 border border-green-200" data-gen="3" data-filter="generation">Gen III</button>
+                    <button class="filter-chip bg-yellow-50 hover:bg-yellow-100 text-yellow-700 px-3 py-2 rounded-full text-xs font-medium transition-all duration-200 border border-yellow-200" data-gen="4" data-filter="generation">Gen IV</button>
+                    <button class="filter-chip bg-purple-50 hover:bg-purple-100 text-purple-700 px-3 py-2 rounded-full text-xs font-medium transition-all duration-200 border border-purple-200" data-gen="5" data-filter="generation">Gen V</button>
+                    <button class="filter-chip bg-pink-50 hover:bg-pink-100 text-pink-700 px-3 py-2 rounded-full text-xs font-medium transition-all duration-200 border border-pink-200" data-gen="6" data-filter="generation">Gen VI</button>
+                    <button class="filter-chip bg-indigo-50 hover:bg-indigo-100 text-indigo-700 px-3 py-2 rounded-full text-xs font-medium transition-all duration-200 border border-indigo-200" data-gen="7" data-filter="generation">Gen VII</button>
+                    <button class="filter-chip bg-teal-50 hover:bg-teal-100 text-teal-700 px-3 py-2 rounded-full text-xs font-medium transition-all duration-200 border border-teal-200" data-gen="8" data-filter="generation">Gen VIII</button>
+                    <button class="filter-chip bg-orange-50 hover:bg-orange-100 text-orange-700 px-3 py-2 rounded-full text-xs font-medium transition-all duration-200 border border-orange-200" data-gen="9" data-filter="generation">Gen IX</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-4 py-6">
+
+        <!-- Loading Spinner -->
+        <div id="loadingSpinner" class="text-center py-12 hidden">
+            <div class="inline-block animate-spin rounded-full h-16 w-16 border-4 border-pokemon-blue border-t-transparent"></div>
+            <p class="mt-4 text-gray-600 font-semibold">Catching Pokémon...</p>
+            <div class="mt-2 text-sm text-gray-500">This may take a moment while we load all Pokemon data</div>
+        </div>
+
+        <!-- Error Message -->
+        <div id="errorMessage" class="hidden bg-red-100 border-l-4 border-red-500 p-4 mb-6 rounded">
+            <div class="flex items-center">
+                <i class="fas fa-exclamation-triangle text-red-500 mr-2"></i>
+                <span class="text-red-700 font-semibold">Oops! Something went wrong.</span>
+            </div>
+            <p class="text-red-600 mt-2" id="errorText"></p>
+        </div>
+
+        <!-- Pokemon Grid -->
+        <div id="pokemonGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6 mb-8">
+            <!-- Pokemon cards will be dynamically generated here -->
+        </div>
+
+        <!-- Load More Button -->
+        <div class="text-center">
+            <button 
+                id="loadMoreBtn" 
+                class="bg-gradient-to-r from-pokemon-blue to-blue-600 text-white px-8 py-3 rounded-full font-semibold hover:shadow-lg transform hover:scale-105 transition-all duration-200 hidden"
+            >
+                <i class="fas fa-plus-circle mr-2"></i>
+                Load More Pokémon
+            </button>
+        </div>
+
+        <!-- No Results -->
+        <div id="noResults" class="text-center py-12 hidden">
+            <div class="text-6xl mb-4">😢</div>
+            <h3 class="text-2xl font-bold text-gray-700 mb-2">No Pokémon Found</h3>
+            <p class="text-gray-600">Try adjusting your search or filters!</p>
+        </div>
+    </main>
+
+    <!-- Pokemon Detail Modal -->
+    <div id="pokemonModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-lg w-full max-h-screen overflow-y-auto pokemon-modal">
+            <div class="p-6">
+                <!-- Modal Header -->
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-2xl font-bold text-gray-800" id="modalPokemonName"></h2>
+                    <button id="closeModal" class="text-gray-400 hover:text-gray-600 text-2xl">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+
+                <!-- Modal Content -->
+                <div class="text-center">
+                    <div class="bg-gradient-to-br from-blue-50 to-purple-50 rounded-xl p-6 mb-6">
+                        <img id="modalPokemonImage" src="" alt="" class="w-48 h-48 mx-auto animate-float">
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4 mb-6">
+                        <div class="bg-gray-50 rounded-lg p-4">
+                            <div class="text-sm text-gray-600">ID</div>
+                            <div class="text-xl font-bold text-pokemon-blue" id="modalPokemonId"></div>
+                        </div>
+                        <div class="bg-gray-50 rounded-lg p-4">
+                            <div class="text-sm text-gray-600">Type</div>
+                            <div class="text-lg font-semibold" id="modalPokemonType"></div>
+                        </div>
+                        <div class="bg-gray-50 rounded-lg p-4">
+                            <div class="text-sm text-gray-600">Height</div>
+                            <div class="text-lg font-semibold" id="modalPokemonHeight"></div>
+                        </div>
+                        <div class="bg-gray-50 rounded-lg p-4">
+                            <div class="text-sm text-gray-600">Weight</div>
+                            <div class="text-lg font-semibold" id="modalPokemonWeight"></div>
+                        </div>
+                    </div>
+
+                    <!-- Additional Stats Container -->
+                    <div id="modalStatsContainer"></div>
+
+                    <div class="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-4 mb-4">
+                        <h3 class="font-bold text-gray-800 mb-2">Description</h3>
+                        <p class="text-gray-600" id="modalPokemonDescription"></p>
+                    </div>
+
+                    <div class="bg-gradient-to-r from-green-50 to-blue-50 rounded-xl p-4">
+                        <h3 class="font-bold text-gray-800 mb-2">Base Experience</h3>
+                        <div class="text-2xl font-bold text-pokemon-green" id="modalPokemonExperience"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t-4 border-pokemon-blue mt-12">
+        <div class="container mx-auto px-4 py-8 text-center">
+            <div class="flex justify-center items-center space-x-4 mb-4">
+                <div class="w-8 h-8 bg-red-500 rounded-full animate-pulse"></div>
+                <div class="w-8 h-8 bg-green-500 rounded-full animate-pulse"></div>
+                <div class="w-8 h-8 bg-blue-500 rounded-full animate-pulse"></div>
+            </div>
+            <p class="text-gray-600">
+                Built with ❤️ for Pokémon trainers everywhere
+            </p>
+            <p class="text-sm text-gray-500 mt-2">
+                Powered by PokéDex API • Gotta catch 'em all!
+            </p>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>
