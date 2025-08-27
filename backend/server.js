@@ -483,7 +483,7 @@ app.use((req, res) => {
 function startServer() {
     loadPokemonData();
     
-    app.listen(PORT, () => {
+    app.listen(PORT, "0.0.0.0", () => {
         const serverId = process.env.SERVER_ID || 'server-1';
         console.log('🚀 Pokédex API Server Started!');
         console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
